@@ -164,21 +164,29 @@ with st.form("run_simulation"):
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # --- Downloadable Results ---
-            st.subheader("⬇️ Download Simulation Data")
-            df = pd.DataFrame(portfolio_paths.T, columns=[f"Simulation {i+1}" for i in range(num_simulations)])
-            df.insert(0, "Year", years)
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Download Portfolio Paths as CSV",
-                data=csv,
-                file_name='portfolio_simulation_results.csv',
-                mime='text/csv'
-            )
+            st.session_state['portfolio_paths'] = portfolio_paths
+            st.session_state['years'] = years
+            st.session_state['num_simulations'] = num_simulations
 
-            st.markdown("---")
-            st.subheader("📘 Methodology & Key Findings")
-            st.markdown("""
+# Place this outside the form, after the form block
+if 'portfolio_paths' in st.session_state and 'years' in st.session_state:
+    st.subheader("⬇️ Download Simulation Data")
+    df = pd.DataFrame(
+        st.session_state['portfolio_paths'].T,
+        columns=[f"Simulation {i+1}" for i in range(st.session_state['num_simulations'])]
+    )
+    df.insert(0, "Year", st.session_state['years'])
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download Portfolio Paths as CSV",
+        data=csv,
+        file_name='portfolio_simulation_results.csv',
+        mime='text/csv'
+    )
+
+st.markdown("---")
+st.subheader("📘 Methodology & Key Findings")
+st.markdown("""
 ### Methodology
 
 This simulation uses a Monte Carlo approach to estimate how long a lump sum investment can sustain annual drawdowns across multiple generations.
