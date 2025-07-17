@@ -110,6 +110,23 @@ with st.form("run_simulation"):
             else:
                 results.append(sim_years)
 
+        # Portfolio paths for plotting and download
+        portfolio_paths = []
+        for _ in range(num_simulations):
+            path = []
+            value = investment_amount
+            for year in range(sim_years):
+                active_draws = get_active_draws(year)
+                yearly_draw = annual_draw_per_child * active_draws
+                rand_return = np.random.normal(real_return, volatility)
+                value = value * (1 + rand_return) - yearly_draw
+                value = max(value, 0)
+                path.append(value)
+            portfolio_paths.append(path)
+
+        portfolio_paths = np.array(portfolio_paths)
+        final_values = portfolio_paths[:, -1]  # <-- Move this up here
+
         avg_years = np.mean(results)
         gen_duration = int(life_expectancy - 30)
         gen_count = avg_years // gen_duration
