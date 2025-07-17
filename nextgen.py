@@ -1,6 +1,8 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objs as go
+import pandas as pd
 
 st.set_page_config(layout='wide')
 st.title('Will My Money Last Three Generations?')
@@ -16,7 +18,7 @@ with st.sidebar:
             help="The lump sum you are starting with."
         )
         real_return = st.selectbox(
-            'Expected Real Return per Annum (%)', [1, 2, 3, 4, 5],
+            'Expected Real Return per Annum (%)', list(range(0, 9)),
             help="Annual return after inflation."
         ) / 100
         volatility = st.slider(
@@ -110,26 +112,69 @@ with st.form("run_simulation"):
 
             col1.metric("Median Final Portfolio", f"R {median_final:,.0f}")
             col2.metric("10th–90th Range", f"R {p10_final:,.0f} – R {p90_final:,.0f}")
-            col3.metric("Survival Rate", f"{survival_rate:,.1f}%")
+            col3.metric("Survival Rate", f"{survival_rate:.1f}%")
 
             st.caption(f"🧯 In the worst-case simulation, the fund ended with R {worst_final:,.0f}.")
 
-            fig, ax = plt.subplots(figsize=(10, 5))
+            # --- Interactive Plotly Graph ---
+            st.subheader("📈 Interactive Portfolio Value Simulation")
+            years = list(range(1, sim_years + 1))
+            fig = go.Figure()
 
+            # Show a sample of simulation paths
             for i in np.random.choice(num_simulations, size=min(10, num_simulations), replace=False):
-                ax.plot(portfolio_paths[i], color='lightgray', linewidth=0.8, alpha=0.7)
+                fig.add_trace(go.Scatter(
+                    x=years, y=portfolio_paths[i],
+                    mode='lines',
+                    line=dict(color='lightgray', width=1),
+                    opacity=0.6,
+                    showlegend=False
+                ))
 
-            ax.plot(median_path, color='blue', label='Median Portfolio Value', linewidth=2)
-            ax.fill_between(range(sim_years), p10, p90, color='blue', alpha=0.2, label='10th–90th Percentile Range')
+            # Median and percentile bands
+            fig.add_trace(go.Scatter(
+                x=years, y=median_path,
+                mode='lines',
+                name='Median Portfolio Value',
+                line=dict(color='blue', width=3)
+            ))
+            fig.add_trace(go.Scatter(
+                x=years, y=p90,
+                mode='lines',
+                name='90th Percentile',
+                line=dict(color='rgba(0,0,255,0.2)', width=0),
+                showlegend=False
+            ))
+            fig.add_trace(go.Scatter(
+                x=years, y=p10,
+                mode='lines',
+                name='10th Percentile',
+                fill='tonexty',
+                fillcolor='rgba(0,0,255,0.15)',
+                line=dict(color='rgba(0,0,255,0.2)', width=0),
+                showlegend=False
+            ))
 
-            ax.set_title('Monte Carlo Simulation: Portfolio Value Over Time')
-            ax.set_xlabel('Years')
-            ax.set_ylabel('Portfolio Value (ZAR)')
-            ax.legend()
-            ax.grid(True, linestyle='--', alpha=0.5)
-            ax.ticklabel_format(style='plain', axis='y')
+            fig.update_layout(
+                xaxis_title='Years',
+                yaxis_title='Portfolio Value (ZAR)',
+                title='Monte Carlo Simulation: Portfolio Value Over Time',
+                hovermode='x unified',
+                template='plotly_white'
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-            st.pyplot(fig)
+            # --- Downloadable Results ---
+            st.subheader("⬇️ Download Simulation Data")
+            df = pd.DataFrame(portfolio_paths.T, columns=[f"Simulation {i+1}" for i in range(num_simulations)])
+            df.insert(0, "Year", years)
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Portfolio Paths as CSV",
+                data=csv,
+                file_name='portfolio_simulation_results.csv',
+                mime='text/csv'
+            )
 
             st.markdown("---")
             st.subheader("📘 Methodology & Key Findings")
