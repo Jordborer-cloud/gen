@@ -44,23 +44,18 @@ with st.sidebar:
             )
             second_gen_ages.append(age)
 
-        child_grandchildren = []
+        num_grandchildren = st.number_input(
+            'Number of 3rd Gen Children (total)', min_value=0, value=4, step=1,
+            help="Total number of 3rd generation children (grandchildren)."
+        )
         third_gen_ages = []
-        for i in range(num_children):
-            grandchildren = st.number_input(
-                f'Children for 2nd Gen Child {i+1}', min_value=0, value=2, step=1,
-                help="How many children does this child have?"
+        for i in range(num_grandchildren):
+            gc_age = st.number_input(
+                f"Starting Age for 3rd Gen Child {i+1}",
+                min_value=0, max_value=120, value=10,
+                help="Current age of this 3rd generation child."
             )
-            child_grandchildren.append(grandchildren)
-            gc_ages = []
-            for j in range(grandchildren):
-                gc_age = st.number_input(
-                    f"Starting Age for 3rd Gen Child {j+1} of 2nd Gen Child {i+1}",
-                    min_value=0, max_value=120, value=10,
-                    help="Current age of this 3rd generation child."
-                )
-                gc_ages.append(gc_age)
-            third_gen_ages.append(gc_ages)
+            third_gen_ages.append(gc_age)
 
         annual_draw_per_child = st.number_input(
             'Annual Drawdown per Child (ZAR)', min_value=0, value=300_000, step=50_000, format="%d",
@@ -74,10 +69,7 @@ with st.sidebar:
 with st.form("run_simulation"):
     submitted = st.form_submit_button("Run Simulation")
     if submitted:
-        total_years = int(life_expectancy - 30)
-        sim_years = total_years
-
-        # Build a list of all descendants with their starting ages and generation
+        # Build a list of all descendants with their starting ages
         descendants = []
         # 2nd gen
         for i in range(num_children):
@@ -86,12 +78,15 @@ with st.form("run_simulation"):
                 "start_age": second_gen_ages[i]
             })
         # 3rd gen
-        for i in range(num_children):
-            for j in range(child_grandchildren[i]):
-                descendants.append({
-                    "gen": 3,
-                    "start_age": third_gen_ages[i][j]
-                })
+        for i in range(num_grandchildren):
+            descendants.append({
+                "gen": 3,
+                "start_age": third_gen_ages[i]
+            })
+
+        # Determine simulation years: until the youngest descendant reaches life expectancy
+        min_start_age = min([d["start_age"] for d in descendants]) if descendants else 0
+        sim_years = int(max(life_expectancy - min_start_age, 1))
 
         # For each year, calculate how many descendants are still alive (age < life_expectancy)
         def get_active_draws(year):
