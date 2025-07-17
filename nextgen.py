@@ -77,8 +77,8 @@ with st.form("run_simulation"):
             gen_duration = int(life_expectancy - 30)
             gen_count = avg_years // gen_duration
 
-            st.metric(label="Average Years Fund Lasts", value=f"{avg_years:.1f} years")
-            st.metric(label="Estimated Generations Covered", value=f"{int(gen_count)}")
+            st.metric(label="Average Years Fund Lasts", value=f"{avg_years:,.1f} years")
+            st.metric(label="Estimated Generations Covered", value=f"{int(gen_count):,}")
 
             sim_years = total_years
             portfolio_paths = []
@@ -110,7 +110,7 @@ with st.form("run_simulation"):
 
             col1.metric("Median Final Portfolio", f"R {median_final:,.0f}")
             col2.metric("10th–90th Range", f"R {p10_final:,.0f} – R {p90_final:,.0f}")
-            col3.metric("Survival Rate", f"{survival_rate:.1f}%")
+            col3.metric("Survival Rate", f"{survival_rate:,.1f}%")
 
             st.caption(f"🧯 In the worst-case simulation, the fund ended with R {worst_final:,.0f}.")
 
