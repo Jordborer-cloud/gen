@@ -133,12 +133,20 @@ with st.form("run_simulation"):
 
         # Check if the fund survived all drawdowns in every simulation
         if np.all(final_values > 0):
-            st.success(f"The fund survived all drawdowns and lasted for all {int(gen_count)} generations!")
+            generations = 0
+            if num_children > 0:
+                generations += 1  # 2nd gen exists
+            if num_grandchildren > 0:
+                generations += 1  # 3rd gen exists
+
+            # If the fund survived the whole simulation, show all generations covered
+            st.success(f"The fund survived all drawdowns and lasted for all {generations} generations!")
             st.metric(label="Average Years Fund Lasts", value=f"{sim_years:,.1f} years")
-            st.metric(label="Estimated Generations Covered", value=f"{int(gen_count):,}")
+            st.metric(label="Estimated Generations Covered", value=f"{generations}")
         else:
             st.metric(label="Average Years Fund Lasts", value=f"{avg_years:,.1f} years")
-            st.metric(label="Estimated Generations Covered", value=f"{int(gen_count):,}")
+            # Estimate fraction of generations covered
+            st.metric(label="Estimated Generations Covered", value=f"{avg_years / sim_years * generations:.1f}")
 
         # Portfolio paths for plotting and download
         portfolio_paths = []
